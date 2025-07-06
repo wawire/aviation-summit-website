@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RegistrationType {
+  DELEGATE
+  SPONSOR
+  EXHIBITOR
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  INTERNATIONAL_TRANSFER
+  LOCAL_TRANSFER
+  MPESA
+}
+
+model Registration {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Basic Information
+  firstName String
+  lastName  String
+  email     String @unique
+  phone     String
+  jobTitle  String
+  company   String
+  website   String?
+  industry  String
+  country   String
+
+  // Registration Details
+  registrationType RegistrationType
+  packageId        String
+  packageName      String
+  packagePrice     Decimal
+  
+  // Additional Information
+  companyDescription String?
+  networkingInterests String[] // JSON array
+  dietaryRequirements String[] // JSON array
+  specialRequests     String?
+
+  // Corporate Package Details (for delegates)
+  additionalAttendees Json? // Array of attendee objects
+  additionalRegistrations Int @default(0)
+
+  // Sponsor/Exhibitor Specific
+  productCategories   String[] // JSON array
+  boothRequirements   String[] // JSON array
+  setupRequirements   String?
+  electricalNeeds     String?
+  internetRequirements String?
+  specialDisplays     String?
+  preferredContactMethod String?
+  bestTimeToCall      String?
+  billingAddress      String?
+  taxId               String?
+
+  // Payment Information
+  paymentMethod       PaymentMethod
+  paymentReference    String?
+  mpesaTransactionCode String?
+  bankTransactionCode  String?
+  totalAmount         Decimal
+  paymentStatus       PaymentStatus @default(PENDING)
+
+  // Status
+  registrationStatus  RegistrationStatus @default(PENDING)
+  
+  // Consent
+  agreeToTerms        Boolean @default(false)
+  marketingConsent    Boolean @default(false)
+
+  // Metadata
+  submissionData      Json? // Store complete form data as backup
+  notes               String?
+
+  @@map("registrations")
+}
+
+model Package {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Package Details
+  name        String   @unique
+  type        RegistrationType
+  price       Decimal
+  originalPrice Decimal?
+  description String
+  features    String[] // JSON array
+  
+  // Availability
+  totalSlots     Int
+  availableSlots Int
+  isActive       Boolean @default(true)
+  
+  // Metadata
+  displayOrder   Int @default(0)
+  popular        Boolean @default(false)
+  teamPackage    Boolean @default(false)
+  includedAttendees Int?
+  deadline       DateTime?
+  note           String?
+
+  @@map("packages")
+}
+
+model EventSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Event Details
+  eventName     String
+  eventDate     DateTime
+  venue         String
+  venueWebsite  String?
+  
+  // Registration Settings
+  earlyBirdDeadline DateTime?
+  registrationOpen  Boolean @default(true)
+  
+  // Payment Settings
+  exchangeRate      Decimal @default(130)
+  
+  // Banking Details
+  bankingDetails    Json
+  
+  @@map("event_settings")
+}
